@@ -1,6 +1,6 @@
 ' ------------------------------------------------------------------------------
 ' (c) balarabe@protonmail.com                                       License: MIT
-' :v: 2018-06-01 02:30:21 9B9D70                                 [sql_insert.go]
+' :v: 2018-06-02 19:45:30 4962F6                                [sql_insert.bas]
 ' ------------------------------------------------------------------------------
 
 Option Explicit: Option Compare Text
@@ -39,6 +39,9 @@ Option Explicit: Option Compare Text
 '
 '               -   or a range that contains the column names
 '                   (e.g. A$1:C$1)
+'
+'               To exclude a column, leave the column name blank
+'               or wrap the column name in parentheses: (name)
 '
 '               As with the table's name, column names are not
 '               escaped or quoted, so you may need to specify
@@ -79,77 +82,95 @@ Public Function sqlInsert( _
 
     Dim sql As String
     sql = "INSERT INTO " & tableName & " ("
+    Dim f As Boolean
     For i = minCol To maxCol
-        If i <> minCol Then
-            sql = sql & ", "
+
+        Dim field As String
+        field = VBA.Trim(cols(i))
+        If field <> vbNullString _
+        And VBA.Left$(field, 1) <> "(" _
+        And VBA.Right$(field, 1) <> ")" Then
+
+            If f Then
+                sql = sql & ", "
+            End If
+            f = True
+            sql = sql & field
         End If
-        sql = sql & VBA.Trim(cols(i))
     Next
     sql = sql & ") VALUES ("
 
     Dim hasV As Boolean
-
+    f = False
     For i = minCol To maxCol
-        If i <> minCol Then
-            sql = sql & ", "
-        End If
+        field = VBA.Trim(cols(i))
+        If field <> vbNullString _
+        And VBA.Left$(field, 1) <> "(" _
+        And VBA.Right$(field, 1) <> ")" Then
 
-        Dim cellV As Variant
-        cellV = firstCell.Offset(0, i - minCol).Value
+            If f Then
+                sql = sql & ", "
+            End If
+            f = True
 
-        If VBA.VarType(cellV) = vbString And VBA.IsDate(cellV) Then
-            cellV = VBA.CDate(cellV)
-        End If
+            Dim cellV As Variant
+            cellV = firstCell.Offset(0, i - minCol).Value
 
-        Select Case VBA.VarType(cellV)
-            Case vbEmpty, vbNull
-                cellV = "NULL"
+            If VBA.VarType(cellV) = vbString And VBA.IsDate(cellV) Then
+                cellV = VBA.CDate(cellV)
+            End If
 
-            Case vbByte, vbCurrency, vbDecimal, vbDouble, _
-                vbInteger, vbLong, vbSingle, vbDouble
-                hasV = True
-                cellV = "" & cellV
-                If VBA.InStrB(1, cellV, ".") > 0 Then
-                    While VBA.Right$(cellV, 1) = "0"
-                        cellV = VBA.Left$(cellV, VBA.Len(cellV) - 1)
-                    Wend
-                    While VBA.Right$(cellV, 1) = "."
-                        cellV = VBA.Left$(cellV, VBA.Len(cellV) - 1)
-                    Wend
-                End If
+            Select Case VBA.VarType(cellV)
+                Case vbEmpty, vbNull
+                    cellV = "NULL"
 
-            Case vbDate
-                hasV = True
-                Dim n As Double
-                n = VBA.CDate(cellV)
-                Dim dateV As Double
-                dateV = VBA.Int(n)
-                cellV = "'"
-                If dateV <> 0 Then
-                    cellV = cellV & VBA.Format$(n, "YYYY-MM-DD")
-                End If
-                If (n - dateV) <> 0 Then
-                    If dateV <> 0 Then
-                        cellV = cellV & " "
+                Case vbByte, vbCurrency, vbDecimal, vbDouble, _
+                    vbInteger, vbLong, vbSingle, vbDouble
+                    hasV = True
+                    cellV = "" & cellV
+                    If VBA.InStrB(1, cellV, ".") > 0 Then
+                        While VBA.Right$(cellV, 1) = "0"
+                            cellV = VBA.Left$(cellV, VBA.Len(cellV) - 1)
+                        Wend
+                        While VBA.Right$(cellV, 1) = "."
+                            cellV = VBA.Left$(cellV, VBA.Len(cellV) - 1)
+                        Wend
                     End If
-                    cellV = cellV & VBA.Format$(n, "HH:NN:SS")
-                End If
-                cellV = cellV & "'"
 
-            Case vbString
-                hasV = True
-                cellV = "'" & VBA.Replace$(cellV, "'", "''") & "'"
+                Case vbDate
+                    hasV = True
+                    Dim n As Double
+                    n = VBA.CDate(cellV)
+                    Dim dateV As Double
+                    dateV = VBA.Int(n)
+                    cellV = "'"
+                    If dateV <> 0 Then
+                        cellV = cellV & VBA.Format$(n, "YYYY-MM-DD")
+                    End If
+                    If (n - dateV) <> 0 Then
+                        If dateV <> 0 Then
+                            cellV = cellV & " "
+                        End If
+                        cellV = cellV & VBA.Format$(n, "HH:NN:SS")
+                    End If
+                    cellV = cellV & "'"
 
-            Case Else
-                sql = sql & "'#ERR " & VBA.VarType(cellV) & "'"
-                cellV = "NULL"
-        End Select
-        sql = sql & cellV
+                Case vbString
+                    hasV = True
+                    cellV = "'" & VBA.Replace$(cellV, "'", "''") & "'"
+
+                Case Else
+                    sql = sql & "'#ERR " & VBA.VarType(cellV) & "'"
+                    cellV = "NULL"
+            End Select
+            sql = sql & cellV
+        End If
     Next
     sql = sql & ");"
     If Not hasV Then
         sql = vbNullString
     End If
+    Debug.Print sql
     sqlInsert = sql
 End Function
 

@@ -1,6 +1,6 @@
 ' ------------------------------------------------------------------------------
 ' (c) balarabe@protonmail.com                                       License: MIT
-' :v: 2018-06-02 19:45:30 4962F6                                [sql_insert.bas]
+' :v: 2018-06-04 10:15:59 595393                                [sql_insert.bas]
 ' ------------------------------------------------------------------------------
 
 Option Explicit: Option Compare Text
@@ -126,15 +126,19 @@ Public Function sqlInsert( _
 
                 Case vbByte, vbCurrency, vbDecimal, vbDouble, _
                     vbInteger, vbLong, vbSingle, vbDouble
-                    hasV = True
-                    cellV = "" & cellV
-                    If VBA.InStrB(1, cellV, ".") > 0 Then
-                        While VBA.Right$(cellV, 1) = "0"
-                            cellV = VBA.Left$(cellV, VBA.Len(cellV) - 1)
-                        Wend
-                        While VBA.Right$(cellV, 1) = "."
-                            cellV = VBA.Left$(cellV, VBA.Len(cellV) - 1)
-                        Wend
+                    If cellV > -0.0001 And cellV < 0.0001 Then
+                        cellV = "NULL"
+                    Else
+                        hasV = True
+                        cellV = "" & cellV
+                        If VBA.InStrB(1, cellV, ".") > 0 Then
+                            While VBA.Right$(cellV, 1) = "0"
+                                cellV = VBA.Left$(cellV, VBA.Len(cellV) - 1)
+                            Wend
+                            While VBA.Right$(cellV, 1) = "."
+                                cellV = VBA.Left$(cellV, VBA.Len(cellV) - 1)
+                            Wend
+                        End If
                     End If
 
                 Case vbDate
@@ -156,8 +160,12 @@ Public Function sqlInsert( _
                     cellV = cellV & "'"
 
                 Case vbString
-                    hasV = True
-                    cellV = "'" & VBA.Replace$(cellV, "'", "''") & "'"
+                    If cellV & vbNullString = vbNullString Then
+                        cellV = "NULL"
+                    Else
+                        hasV = True
+                        cellV = "'" & VBA.Replace$(cellV, "'", "''") & "'"
+                    End If
 
                 Case Else
                     sql = sql & "'#ERR " & VBA.VarType(cellV) & "'"
@@ -170,7 +178,6 @@ Public Function sqlInsert( _
     If Not hasV Then
         sql = vbNullString
     End If
-    Debug.Print sql
     sqlInsert = sql
 End Function
 

@@ -1,6 +1,6 @@
 ' ------------------------------------------------------------------------------
 ' (c) balarabe@protonmail.com                                       License: MIT
-' :v: 2018-06-04 10:15:59 595393                                [sql_insert.bas]
+' :v: 2018-06-13 14:54:59 6EB314                                [sql_insert.bas]
 ' ------------------------------------------------------------------------------
 
 Option Explicit: Option Compare Text
@@ -127,7 +127,7 @@ Public Function sqlInsert( _
                 Case vbByte, vbCurrency, vbDecimal, vbDouble, _
                     vbInteger, vbLong, vbSingle, vbDouble
                     If cellV > -0.0001 And cellV < 0.0001 Then
-                        cellV = "NULL"
+                        cellV = "0"
                     Else
                         hasV = True
                         cellV = "" & cellV

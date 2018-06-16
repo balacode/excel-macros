@@ -1,6 +1,6 @@
 ' ------------------------------------------------------------------------------
 ' (c) balarabe@protonmail.com                                       License: MIT
-' :v: 2018-06-13 14:54:59 6EB314                                [sql_insert.bas]
+' :v: 2018-06-16 21:55:59 914F87                                [sql_insert.bas]
 ' ------------------------------------------------------------------------------
 
 Option Explicit: Option Compare Text
@@ -40,7 +40,7 @@ Option Explicit: Option Compare Text
 '               -   or a range that contains the column names
 '                   (e.g. A$1:C$1)
 '
-'               To exclude a column, leave the column name blank
+'               To exclude a column: leave the column name blank
 '               or wrap the column name in parentheses: (name)
 '
 '               As with the table's name, column names are not
@@ -79,39 +79,39 @@ Public Function sqlInsert( _
     Dim minCol    As Integer:  minCol = LBound(cols)
     Dim maxCol    As Integer:  maxCol = UBound(cols)
     Dim colCount  As Integer:  colCount = maxCol - minCol + 1
+    Dim hasF      As Boolean ' has fields
 
     Dim sql As String
     sql = "INSERT INTO " & tableName & " ("
-    Dim f As Boolean
     For i = minCol To maxCol
 
         Dim field As String
-        field = VBA.Trim(cols(i))
+        field = VBA.Trim$(cols(i))
         If field <> vbNullString _
         And VBA.Left$(field, 1) <> "(" _
         And VBA.Right$(field, 1) <> ")" Then
 
-            If f Then
+            If hasF Then
                 sql = sql & ", "
             End If
-            f = True
+            hasF = True
             sql = sql & field
         End If
     Next
     sql = sql & ") VALUES ("
 
     Dim hasV As Boolean
-    f = False
+    hasF = False
     For i = minCol To maxCol
-        field = VBA.Trim(cols(i))
+        field = VBA.Trim$(cols(i))
         If field <> vbNullString _
         And VBA.Left$(field, 1) <> "(" _
         And VBA.Right$(field, 1) <> ")" Then
 
-            If f Then
+            If hasF Then
                 sql = sql & ", "
             End If
-            f = True
+            hasF = True
 
             Dim cellV As Variant
             cellV = firstCell.Offset(0, i - minCol).Value

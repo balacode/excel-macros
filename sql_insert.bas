@@ -1,6 +1,6 @@
 ' ------------------------------------------------------------------------------
 ' (c) balarabe@protonmail.com                                       License: MIT
-' :v: 2018-06-16 21:55:59 914F87                                [sql_insert.bas]
+' :v: 2018-06-18 22:42:30 519F92                                [sql_insert.bas]
 ' ------------------------------------------------------------------------------
 
 Option Explicit: Option Compare Text
@@ -42,6 +42,9 @@ Option Explicit: Option Compare Text
 '
 '               To exclude a column: leave the column name blank
 '               or wrap the column name in parentheses: (name)
+'
+'               To cast a null/blank column to zero:
+'               prefix the column name with #
 '
 '               As with the table's name, column names are not
 '               escaped or quoted, so you may need to specify
@@ -87,6 +90,9 @@ Public Function sqlInsert( _
 
         Dim field As String
         field = VBA.Trim$(cols(i))
+        If VBA.Left$(field, 1) = "#" Then
+            field = VBA.Mid$(field, 2)
+        End If
         If field <> vbNullString _
         And VBA.Left$(field, 1) <> "(" _
         And VBA.Right$(field, 1) <> ")" Then
@@ -104,6 +110,11 @@ Public Function sqlInsert( _
     hasF = False
     For i = minCol To maxCol
         field = VBA.Trim$(cols(i))
+        Dim toZero As Boolean ' cast NULL/blank to zero?
+        toZero = VBA.Left$(field, 1) = "#"
+        If toZero Then
+            field = VBA.Mid$(field, 2)
+        End If
         If field <> vbNullString _
         And VBA.Left$(field, 1) <> "(" _
         And VBA.Right$(field, 1) <> ")" Then
@@ -122,7 +133,11 @@ Public Function sqlInsert( _
 
             Select Case VBA.VarType(cellV)
                 Case vbEmpty, vbNull
-                    cellV = "NULL"
+                    If toZero Then
+                        cellV = "0"
+                    Else
+                        cellV = "NULL"
+                    End If
 
                 Case vbByte, vbCurrency, vbDecimal, vbDouble, _
                     vbInteger, vbLong, vbSingle, vbDouble
@@ -161,7 +176,11 @@ Public Function sqlInsert( _
 
                 Case vbString
                     If cellV & vbNullString = vbNullString Then
-                        cellV = "NULL"
+                        If toZero Then
+                            cellV = "0"
+                        Else
+                            cellV = "NULL"
+                        End If
                     Else
                         hasV = True
                         cellV = "'" & VBA.Replace$(cellV, "'", "''") & "'"
